@@ -192,15 +192,26 @@
         }
       }, 1000);
 
-      // 时间问候
+      // 时间问候与位置欢迎
       function getTimeGreeting(timeRules) {
-        if (location.pathname === "/") {
-          for (const { hour, text } of timeRules) {
-            const now = new Date();
-            const [start, end] = hour.split("-");
-            if (start <= now.getHours() && now.getHours() <= (end || start)) return text;
+        // 尝试从 sessionStorage 获取访客位置
+        let locationStr = "";
+        try {
+          const locData = sessionStorage.getItem("visitor_location");
+          if (locData) {
+            const loc = JSON.parse(locData);
+            const parts = [loc.region, loc.city].filter(Boolean);
+            if (parts.length) locationStr = parts.join("");
           }
+        } catch (e) {}
+
+        if (location.pathname === "/") {
+          if (locationStr) {
+            return `欢迎来自 <span>${locationStr}</span> 的朋友～<br>祝您在这里玩得开心！`;
+          }
+          return "欢迎来到这里～<br>祝您玩得开心！";
         }
+
         const title = `欢迎阅读<span>「${document.title.split(" - ")[0]}」</span>`;
         if (document.referrer !== "") {
           const ref = new URL(document.referrer);
@@ -208,11 +219,36 @@
           const map = { baidu: "百度", so: "360搜索", google: "谷歌搜索" };
           if (location.hostname === ref.hostname) return title;
           const from = site in map ? map[site] : ref.hostname;
+          if (locationStr) {
+            return `Hello！来自 <span>${from}</span> 的 ${locationStr} 朋友<br>${title}`;
+          }
           return `Hello！来自 <span>${from}</span> 的朋友<br>${title}`;
+        }
+        if (locationStr) {
+          return `欢迎来自 <span>${locationStr}</span> 的朋友～<br>${title}`;
         }
         return title;
       }
       showMessage(getTimeGreeting(tipsData.time), 7000, 11);
+
+      // 延时检查位置数据，到达后替换首页欢迎语
+      if (location.pathname === "/" && !sessionStorage.getItem("visitor_location")) {
+        let retries = 0;
+        const checkLoc = setInterval(() => {
+          try {
+            const d = sessionStorage.getItem("visitor_location");
+            if (d) {
+              clearInterval(checkLoc);
+              const loc = JSON.parse(d);
+              const parts = [loc.region, loc.city].filter(Boolean);
+              if (parts.length) {
+                showMessage(`欢迎来自 <span>${parts.join("")}</span> 的朋友～<br>祝您在这里玩得开心！`, 7000, 12);
+              }
+            }
+          } catch (e) {}
+          if (++retries > 20) clearInterval(checkLoc);
+        }, 300);
+      }
 
       // 鼠标悬停提示（按元素判断，同一选择器的不同元素各自触发）
       window.addEventListener("mouseover", (e) => {
@@ -378,13 +414,15 @@
       origLeft = pos.left;
       origTop = pos.top;
       moved = false;
-      showMessage(pick(["你要带我去哪里呀～", "哇，飞起来了！", "嘿咻嘿咻～", "抓稳啦！", "这是要去哪呢？"]), 2000, 8);
     }
 
     function onMove(e) {
       if (!dragging) return;
       e.preventDefault();
-      moved = true;
+      if (!moved) {
+        moved = true;
+        showMessage(pick(["你要带我去哪里呀～", "哇，飞起来了！", "嘿咻嘿咻～", "抓稳啦！", "这是要去哪呢？"]), 2000, 8);
+      }
       const ev = e.touches ? e.touches[0] : e;
       const w = el.offsetWidth;
       const h = el.offsetHeight;
@@ -399,16 +437,15 @@
     function onEnd() {
       if (!dragging) return;
       dragging = false;
+      if (!moved) return;
       localStorage.setItem("waifu-pos", JSON.stringify({
         left: parseInt(el.style.left),
         top: parseInt(el.style.top)
       }));
-      if (moved) {
-        // 阻止松开时触发的 click 事件
-        const block = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
-        el.addEventListener("click", block, { capture: true, once: true });
-        setTimeout(() => el.removeEventListener("click", block, { capture: true }), 100);
-      }
+      // 阻止松开时触发的 click 事件
+      const block = (ev) => { ev.stopPropagation(); ev.preventDefault(); };
+      el.addEventListener("click", block, { capture: true, once: true });
+      setTimeout(() => el.removeEventListener("click", block, { capture: true }), 100);
       showMessage(pick(["就这里好啦！", "这里不错呢～", "放我下来，累死了！", "新家感觉怎么样？", "好，就住这了！"]), 3000, 8);
     }
 
