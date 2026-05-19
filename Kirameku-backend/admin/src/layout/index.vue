@@ -132,7 +132,7 @@ const LayHeader = defineComponent({
     return h(
       "div",
       {
-        class: { "fixed-header": set.fixedHeader },
+        class: { "fixed-header": false },
         style: [
           set.hideTabs && layout.value.includes("horizontal")
             ? isDark.value
@@ -181,22 +181,8 @@ const LayHeader = defineComponent({
         pureSetting.hiddenSideBar ? 'main-hidden' : ''
       ]"
     >
-      <div v-if="set.fixedHeader">
-        <LayHeader />
-        <!-- 主体内容 -->
-        <LayContent :fixed-header="set.fixedHeader" />
-      </div>
-      <el-scrollbar v-else>
-        <el-backtop
-          :title="t('buttons.pureBackTop')"
-          target=".main-container .el-scrollbar__wrap"
-        >
-          <BackTopIcon />
-        </el-backtop>
-        <LayHeader />
-        <!-- 主体内容 -->
-        <LayContent :fixed-header="set.fixedHeader" />
-      </el-scrollbar>
+      <LayHeader />
+      <LayContent :fixed-header="false" />
     </div>
     <!-- 系统设置 -->
     <LaySetting />

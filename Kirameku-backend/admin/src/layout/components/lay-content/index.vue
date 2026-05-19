@@ -47,27 +47,7 @@ const getMainWidth = computed(() => {
 });
 
 const getSectionStyle = computed(() => {
-  return [
-    hideTabs.value && layout ? "padding-top: 48px;" : "",
-    !hideTabs.value && layout
-      ? tagsStyle.value == "chrome"
-        ? "padding-top: 85px;"
-        : "padding-top: 81px;"
-      : "",
-    hideTabs.value && !layout.value ? "padding-top: 48px;" : "",
-    !hideTabs.value && !layout.value
-      ? tagsStyle.value == "chrome"
-        ? "padding-top: 85px;"
-        : "padding-top: 81px;"
-      : "",
-    props.fixedHeader
-      ? ""
-      : `padding-top: 0;${
-          hideTabs.value
-            ? "min-height: calc(100vh - 48px);"
-            : "min-height: calc(100vh - 86px);"
-        }`
-  ];
+  return [];
 });
 
 const transitionMain = defineComponent({
@@ -105,59 +85,14 @@ const transitionMain = defineComponent({
 
 <template>
   <section
-    :class="[fixedHeader ? 'app-main' : 'app-main-nofixed-header']"
+    class="app-main-nofixed-header"
     :style="getSectionStyle"
   >
     <router-view>
       <template #default="{ Component, route }">
         <LayFrame :currComp="Component" :currRoute="route">
           <template #default="{ Comp, fullPath, frameInfo }">
-            <el-scrollbar
-              v-if="fixedHeader"
-              :wrap-style="{
-                display: 'flex',
-                'flex-wrap': 'wrap',
-                width: '100%',
-                transition: 'all 300ms cubic-bezier(0.4, 0, 0.2, 1)'
-              }"
-              :view-style="{
-                display: 'flex',
-                flex: 'auto',
-                overflow: 'hidden',
-                'flex-direction': 'column'
-              }"
-            >
-              <el-backtop
-                :title="t('buttons.pureBackTop')"
-                target=".app-main .el-scrollbar__wrap"
-              >
-                <BackTopIcon />
-              </el-backtop>
-              <div class="grow">
-                <transitionMain :route="route">
-                  <keep-alive
-                    v-if="isKeepAlive"
-                    :include="usePermissionStoreHook().cachePageList"
-                  >
-                    <component
-                      :is="Comp"
-                      :key="fullPath"
-                      :frameInfo="frameInfo"
-                      class="main-content"
-                    />
-                  </keep-alive>
-                  <component
-                    :is="Comp"
-                    v-else
-                    :key="fullPath"
-                    :frameInfo="frameInfo"
-                    class="main-content"
-                  />
-                </transitionMain>
-              </div>
-              <LayFooter v-if="!hideFooter" />
-            </el-scrollbar>
-            <div v-else class="grow">
+            <div class="grow">
               <transitionMain :route="route">
                 <keep-alive
                   v-if="isKeepAlive"
@@ -184,24 +119,17 @@ const transitionMain = defineComponent({
       </template>
     </router-view>
 
-    <!-- 页脚 -->
-    <LayFooter v-if="!hideFooter && !fixedHeader" />
+    <LayFooter v-if="!hideFooter" />
   </section>
 </template>
 
 <style scoped>
-.app-main {
-  position: relative;
-  width: 100%;
-  height: 100vh;
-  overflow-x: hidden;
-}
-
 .app-main-nofixed-header {
   position: relative;
   display: flex;
   flex-direction: column;
   width: 100%;
+  min-height: auto;
 }
 
 .main-content {
