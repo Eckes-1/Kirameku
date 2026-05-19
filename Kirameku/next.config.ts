@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
 
   allowedDevOrigins: [
     "127.0.0.1",
-    "run-agent-6a0be357b96c4d5d18e15a03-mpc4axue-preview.agent-sandbox-bj-c1-gw.trae.cn",
+    "run-agent-6a0be357b96c4d5d18e15a03-mpctkr57-preview.agent-sandbox-bj-a2-gw.trae.cn",
   ],
 
   async rewrites() {
