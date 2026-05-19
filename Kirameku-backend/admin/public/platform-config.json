@@ -1,7 +1,7 @@
 {
   "Version": "7.0.0",
   "Title": "Kirameku",
-  "FixedHeader": true,
+  "FixedHeader": false,
   "HiddenSideBar": false,
   "MultiTagsCache": false,
   "KeepAlive": true,
