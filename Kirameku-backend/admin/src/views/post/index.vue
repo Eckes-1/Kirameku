@@ -18,6 +18,8 @@ import EyeLine from "~icons/ri/eye-line";
 import HeartLine from "~icons/ri/heart-line";
 import PushpinFill from "~icons/ri/pushpin-fill";
 import CalendarLine from "~icons/ri/calendar-line";
+import ListView from "~icons/ri/list-view";
+import GridFill from "~icons/ri/grid-fill";
 
 defineOptions({ name: "PostIndex" });
 
@@ -31,6 +33,7 @@ const categoryFilter = ref("");
 const tagFilter = ref("");
 const categoryList = ref<CategoryItem[]>([]);
 const tagList = ref<TagItem[]>([]);
+const viewMode = ref<"table" | "card">("table");
 
 const stats = reactive({ total: 0, published: 0, draft: 0, archived: 0 });
 
@@ -60,6 +63,12 @@ const statCards = computed(() => [
   { key: "draft", label: "草稿箱", value: stats.draft, icon: DraftLine, color: "#909399", bg: "#f4f4f5" },
   { key: "archived", label: "已归档", value: stats.archived, icon: ArchiveLine, color: "#e6a23c", bg: "#fdf6ec" }
 ]);
+
+const statusMap: Record<string, { label: string; color: string }> = {
+  published: { label: "已发布", color: "#67c23a" },
+  draft: { label: "草稿", color: "#909399" },
+  archived: { label: "已归档", color: "#e6a23c" }
+};
 
 async function loadFilters() {
   const [cats, tags] = await Promise.all([
@@ -162,6 +171,19 @@ async function handleBatchDelete() {
 
 function handleSelectionChange(rows: PostItem[]) {
   selectedRows.value = rows;
+}
+
+function toggleCardSelect(item: PostItem) {
+  const idx = selectedRows.value.findIndex(r => r.id === item.id);
+  if (idx >= 0) {
+    selectedRows.value.splice(idx, 1);
+  } else {
+    selectedRows.value.push(item);
+  }
+}
+
+function isCardSelected(item: PostItem) {
+  return selectedRows.value.some(r => r.id === item.id);
 }
 
 function formatTime(t: string | null | undefined) {
@@ -269,133 +291,251 @@ onMounted(() => {
           >
             批量删除 ({{ selectedRows.length }})
           </el-button>
+          <div class="view-toggle">
+            <el-tooltip content="表格视图" placement="top">
+              <button
+                class="toggle-btn"
+                :class="{ active: viewMode === 'table' }"
+                @click="viewMode = 'table'"
+              >
+                <IconifyIconOffline :icon="ListView" />
+              </button>
+            </el-tooltip>
+            <el-tooltip content="卡片视图" placement="top">
+              <button
+                class="toggle-btn"
+                :class="{ active: viewMode === 'card' }"
+                @click="viewMode = 'card'"
+              >
+                <IconifyIconOffline :icon="GridFill" />
+              </button>
+            </el-tooltip>
+          </div>
         </div>
       </div>
 
-      <pure-table
-        :data="dataList"
-        :columns="columns"
-        :loading="loading"
-        :pagination="pagination"
-        align-whole="center"
-        row-key="id"
-        table-layout="auto"
-        @selection-change="handleSelectionChange"
-        @page-size-change="handleSizeChange"
-        @page-current-change="handleCurrentChange"
-      >
-        <template #article="{ row }">
-          <div class="article-cell">
-            <div class="article-title" @click="handleEdit(row)">
-              <IconifyIconOffline
-                v-if="row.is_pinned"
-                :icon="PushpinFill"
-                class="pin-icon"
+      <div v-if="viewMode === 'table'" class="table-view">
+        <pure-table
+          :data="dataList"
+          :columns="columns"
+          :loading="loading"
+          :pagination="pagination"
+          align-whole="center"
+          row-key="id"
+          table-layout="auto"
+          @selection-change="handleSelectionChange"
+          @page-size-change="handleSizeChange"
+          @page-current-change="handleCurrentChange"
+        >
+          <template #article="{ row }">
+            <div class="article-cell">
+              <div class="article-title" @click="handleEdit(row)">
+                <IconifyIconOffline
+                  v-if="row.is_pinned"
+                  :icon="PushpinFill"
+                  class="pin-icon"
+                />
+                {{ row.title }}
+              </div>
+              <div v-if="row.description" class="article-desc">{{ row.description }}</div>
+              <div class="article-meta">
+                <span v-if="row.is_pinned" class="meta-pin">置顶</span>
+                <span>{{ row.word_count ?? 0 }} 字</span>
+                <span class="meta-dot">·</span>
+                <span>约 {{ row.reading_time ?? 0 }} 分钟阅读</span>
+              </div>
+            </div>
+          </template>
+
+          <template #category="{ row }">
+            <el-tag
+              v-if="row.category"
+              effect="plain"
+              round
+              size="small"
+            >
+              {{ row.category }}
+            </el-tag>
+            <span v-else class="text-placeholder">-</span>
+          </template>
+
+          <template #tags="{ row }">
+            <div class="tags-cell">
+              <el-tag
+                v-for="tag in (row.tags || []).slice(0, 3)"
+                :key="tag"
+                size="small"
+                effect="plain"
+                round
+                type="info"
+              >
+                {{ tag }}
+              </el-tag>
+              <el-tag
+                v-if="(row.tags || []).length > 3"
+                size="small"
+                effect="plain"
+                round
+                type="info"
+              >
+                +{{ row.tags.length - 3 }}
+              </el-tag>
+            </div>
+          </template>
+
+          <template #status="{ row }">
+            <span
+              class="status-dot-wrap"
+              :class="row.status"
+            >
+              <span class="dot" />
+              {{ statusMap[row.status]?.label ?? row.status }}
+            </span>
+          </template>
+
+          <template #data="{ row }">
+            <div class="data-cell">
+              <span class="data-item">
+                <IconifyIconOffline :icon="EyeLine" class="data-icon" />
+                {{ row.views ?? 0 }}
+              </span>
+              <span class="data-item data-likes">
+                <IconifyIconOffline :icon="HeartLine" class="data-icon" />
+                {{ row.likes ?? 0 }}
+              </span>
+            </div>
+          </template>
+
+          <template #time="{ row }">
+            <div class="time-cell">
+              <div v-if="row.published_at" class="time-row">
+                <IconifyIconOffline :icon="CalendarLine" class="time-icon" />
+                {{ formatTime(row.published_at) }}
+              </div>
+              <div v-else class="text-placeholder">未发布</div>
+              <div v-if="row.updated_at" class="time-sub">
+                更新于 {{ formatTime(row.updated_at) }}
+              </div>
+            </div>
+          </template>
+
+          <template #operation="{ row }">
+            <div class="op-cell">
+              <el-button
+                link
+                type="primary"
+                :icon="useRenderIcon('ri:edit-line')"
+                @click="handleEdit(row)"
+              >
+                编辑
+              </el-button>
+              <el-popconfirm :title="`确认删除「${row.title}」？`" @confirm="handleDelete(row)">
+                <template #reference>
+                  <el-button link type="danger" :icon="useRenderIcon('ri:delete-bin-line')">
+                    删除
+                  </el-button>
+                </template>
+              </el-popconfirm>
+            </div>
+          </template>
+        </pure-table>
+      </div>
+
+      <div v-else class="card-view">
+        <div v-if="loading" class="card-loading">
+          <el-icon class="is-loading" :size="32"><IconifyIconOffline :icon="ArticleLine" /></el-icon>
+          <span>加载中...</span>
+        </div>
+        <div v-else-if="dataList.length === 0" class="card-empty">
+          <el-empty description="暂无文章" />
+        </div>
+        <div v-else class="card-grid">
+          <div
+            v-for="item in dataList"
+            :key="item.id"
+            class="post-card"
+            :class="{ selected: isCardSelected(item) }"
+            @click.self="handleEdit(item)"
+          >
+            <div class="card-check" @click.stop="toggleCardSelect(item)">
+              <el-checkbox :model-value="isCardSelected(item)" />
+            </div>
+            <div class="card-cover" @click="handleEdit(item)">
+              <el-image
+                v-if="item.cover"
+                :src="item.cover"
+                fit="cover"
+                class="cover-img"
               />
-              {{ row.title }}
+              <div v-else class="cover-empty">
+                <IconifyIconOffline :icon="ArticleLine" />
+              </div>
+              <span
+                v-if="item.is_pinned"
+                class="card-pin"
+              >
+                <IconifyIconOffline :icon="PushpinFill" /> 置顶
+              </span>
+              <span class="card-status" :class="item.status">
+                {{ statusMap[item.status]?.label ?? item.status }}
+              </span>
             </div>
-            <div v-if="row.description" class="article-desc">{{ row.description }}</div>
-            <div class="article-meta">
-              <span v-if="row.is_pinned" class="meta-pin">置顶</span>
-              <span>{{ row.word_count ?? 0 }} 字</span>
-              <span class="meta-dot">·</span>
-              <span>约 {{ row.reading_time ?? 0 }} 分钟阅读</span>
+            <div class="card-body" @click="handleEdit(item)">
+              <div class="card-title">{{ item.title }}</div>
+              <div v-if="item.description" class="card-desc">{{ item.description }}</div>
+              <div class="card-tags">
+                <el-tag
+                  v-for="tag in (item.tags || []).slice(0, 3)"
+                  :key="tag"
+                  size="small"
+                  effect="plain"
+                  round
+                  type="info"
+                >
+                  {{ tag }}
+                </el-tag>
+              </div>
             </div>
-          </div>
-        </template>
-
-        <template #category="{ row }">
-          <el-tag
-            v-if="row.category"
-            effect="plain"
-            round
-            size="small"
-          >
-            {{ row.category }}
-          </el-tag>
-          <span v-else class="text-placeholder">-</span>
-        </template>
-
-        <template #tags="{ row }">
-          <div class="tags-cell">
-            <el-tag
-              v-for="tag in (row.tags || []).slice(0, 3)"
-              :key="tag"
-              size="small"
-              effect="plain"
-              round
-              type="info"
-            >
-              {{ tag }}
-            </el-tag>
-            <el-tag
-              v-if="(row.tags || []).length > 3"
-              size="small"
-              effect="plain"
-              round
-              type="info"
-            >
-              +{{ row.tags.length - 3 }}
-            </el-tag>
-          </div>
-        </template>
-
-        <template #status="{ row }">
-          <span
-            class="status-dot-wrap"
-            :class="row.status"
-          >
-            <span class="dot" />
-            {{ row.status === "published" ? "已发布" : row.status === "draft" ? "草稿" : "已归档" }}
-          </span>
-        </template>
-
-        <template #data="{ row }">
-          <div class="data-cell">
-            <span class="data-item">
-              <IconifyIconOffline :icon="EyeLine" class="data-icon" />
-              {{ row.views ?? 0 }}
-            </span>
-            <span class="data-item data-likes">
-              <IconifyIconOffline :icon="HeartLine" class="data-icon" />
-              {{ row.likes ?? 0 }}
-            </span>
-          </div>
-        </template>
-
-        <template #time="{ row }">
-          <div class="time-cell">
-            <div v-if="row.published_at" class="time-row">
-              <IconifyIconOffline :icon="CalendarLine" class="time-icon" />
-              {{ formatTime(row.published_at) }}
-            </div>
-            <div v-else class="text-placeholder">未发布</div>
-            <div v-if="row.updated_at" class="time-sub">
-              更新于 {{ formatTime(row.updated_at) }}
-            </div>
-          </div>
-        </template>
-
-        <template #operation="{ row }">
-          <div class="op-cell">
-            <el-button
-              link
-              type="primary"
-              :icon="useRenderIcon('ri:edit-line')"
-              @click="handleEdit(row)"
-            >
-              编辑
-            </el-button>
-            <el-popconfirm :title="`确认删除「${row.title}」？`" @confirm="handleDelete(row)">
-              <template #reference>
-                <el-button link type="danger" :icon="useRenderIcon('ri:delete-bin-line')">
-                  删除
+            <div class="card-footer">
+              <div class="card-meta">
+                <span v-if="item.category" class="card-category">
+                  <el-tag effect="plain" round size="small">{{ item.category }}</el-tag>
+                </span>
+                <span class="card-stat">
+                  <IconifyIconOffline :icon="EyeLine" /> {{ item.views ?? 0 }}
+                </span>
+                <span class="card-stat">
+                  <IconifyIconOffline :icon="HeartLine" /> {{ item.likes ?? 0 }}
+                </span>
+              </div>
+              <div class="card-actions">
+                <el-button link type="primary" size="small" @click.stop="handleEdit(item)">
+                  编辑
                 </el-button>
-              </template>
-            </el-popconfirm>
+                <el-popconfirm :title="`确认删除「${item.title}」？`" @confirm="handleDelete(item)">
+                  <template #reference>
+                    <el-button link type="danger" size="small" @click.stop>
+                      删除
+                    </el-button>
+                  </template>
+                </el-popconfirm>
+              </div>
+            </div>
           </div>
-        </template>
-      </pure-table>
+        </div>
+        <div v-if="dataList.length > 0" class="card-pagination">
+          <el-pagination
+            v-model:current-page="pagination.currentPage"
+            v-model:page-size="pagination.pageSize"
+            :total="pagination.total"
+            :page-sizes="[12, 20, 40, 60]"
+            background
+            layout="total, sizes, prev, pager, next"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+          />
+        </div>
+      </div>
     </el-card>
   </div>
 </template>
@@ -532,6 +672,37 @@ onMounted(() => {
 
 .filter-select {
   width: 120px;
+}
+
+.view-toggle {
+  display: flex;
+  border: 1px solid var(--el-border-color);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-left: 4px;
+}
+
+.toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--el-text-color-regular);
+  transition: all 0.2s;
+
+  &:hover {
+    color: var(--el-color-primary);
+  }
+
+  &.active {
+    background: var(--el-color-primary);
+    color: #fff;
+  }
 }
 
 .article-cell {
@@ -685,6 +856,198 @@ onMounted(() => {
   gap: 4px;
 }
 
+.card-view {
+  padding: 20px;
+}
+
+.card-loading,
+.card-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 0;
+  gap: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.post-card {
+  border-radius: 10px;
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-lighter);
+  overflow: hidden;
+  transition: all 0.25s ease;
+  position: relative;
+  cursor: default;
+
+  &:hover {
+    box-shadow: 0 6px 20px rgb(0 0 0 / 8%);
+    transform: translateY(-2px);
+  }
+
+  &.selected {
+    border-color: var(--el-color-primary);
+    box-shadow: 0 0 0 1px var(--el-color-primary);
+  }
+}
+
+.card-check {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  background: rgb(255 255 255 / 85%);
+  border-radius: 4px;
+  padding: 2px;
+  backdrop-filter: blur(4px);
+}
+
+.card-cover {
+  position: relative;
+  width: 100%;
+  height: 160px;
+  cursor: pointer;
+  overflow: hidden;
+
+  .cover-img {
+    width: 100%;
+    height: 100%;
+  }
+
+  .cover-empty {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--el-fill-color-light);
+    color: var(--el-text-color-placeholder);
+    font-size: 36px;
+  }
+}
+
+.card-pin {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgb(230 162 60 / 90%);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  backdrop-filter: blur(4px);
+}
+
+.card-status {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  backdrop-filter: blur(4px);
+
+  &.published {
+    background: rgb(103 194 58 / 85%);
+    color: #fff;
+  }
+
+  &.draft {
+    background: rgb(144 147 153 / 85%);
+    color: #fff;
+  }
+
+  &.archived {
+    background: rgb(230 162 60 / 85%);
+    color: #fff;
+  }
+}
+
+.card-body {
+  padding: 14px 16px 10px;
+  cursor: pointer;
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+
+  &:hover {
+    color: var(--el-color-primary);
+  }
+}
+
+.card-desc {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  margin-top: 6px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px 14px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--el-text-color-placeholder);
+
+  .card-stat {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+}
+
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.card-pagination {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0 4px;
+}
+
 html.dark .stat-card {
   border-color: rgb(255 255 255 / 8%);
 
@@ -695,6 +1058,20 @@ html.dark .stat-card {
   &.active {
     box-shadow: 0 4px 16px rgb(0 0 0 / 30%);
   }
+}
+
+html.dark .post-card {
+  &:hover {
+    box-shadow: 0 6px 20px rgb(0 0 0 / 30%);
+  }
+
+  &.selected {
+    box-shadow: 0 0 0 1px var(--el-color-primary);
+  }
+}
+
+html.dark .card-check {
+  background: rgb(0 0 0 / 60%);
 }
 
 @media screen and (width <= 768px) {
@@ -759,6 +1136,15 @@ html.dark .stat-card {
   .filter-select {
     width: 100%;
   }
+
+  .card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+  }
+
+  .card-cover {
+    height: 130px;
+  }
 }
 
 @media screen and (width <= 480px) {
@@ -795,6 +1181,10 @@ html.dark .stat-card {
     .stat-label {
       font-size: 12px;
     }
+  }
+
+  .card-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>
