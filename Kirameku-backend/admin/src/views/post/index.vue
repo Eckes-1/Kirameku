@@ -10,6 +10,13 @@ import { getTags } from "@/api/tag";
 import type { TagItem } from "@/api/tag";
 import { useRenderIcon } from "@/components/ReIcon/src/hooks";
 import type { PaginationProps } from "@pureadmin/table";
+import ArticleLine from "~icons/ri/article-line";
+import CheckboxCircleLine from "~icons/ri/checkbox-circle-line";
+import DraftLine from "~icons/ri/draft-line";
+import ArchiveLine from "~icons/ri/archive-line";
+import EyeLine from "~icons/ri/eye-line";
+import HeartLine from "~icons/ri/heart-line";
+import PushpinFill from "~icons/ri/pushpin-fill";
 
 defineOptions({ name: "PostIndex" });
 
@@ -35,17 +42,52 @@ const pagination = reactive<PaginationProps>({
 
 const columns: TableColumnList = [
   { type: "selection", width: 40, reserveSelection: true },
-  { label: "文章", prop: "title", minWidth: 260, slot: "article" },
-  { label: "分类", prop: "category", width: 100, slot: "category" },
-  { label: "标签", prop: "tags", minWidth: 140, slot: "tags" },
-  { label: "状态", prop: "status", width: 80, slot: "status" },
-  { label: "浏览", prop: "views", width: 70, formatter: ({ views }) => views ?? 0 },
-  { label: "点赞", prop: "likes", width: 70, formatter: ({ likes }) => likes ?? 0 },
-  { label: "发布时间", prop: "published_at", minWidth: 150, slot: "time" },
-  { label: "操作", width: 140, slot: "operation" }
+  { label: "文章", prop: "title", minWidth: 280, slot: "article" },
+  { label: "分类", prop: "category", width: 110, slot: "category" },
+  { label: "标签", prop: "tags", minWidth: 150, slot: "tags" },
+  { label: "状态", prop: "status", width: 90, slot: "status" },
+  { label: "浏览", prop: "views", width: 80, slot: "views" },
+  { label: "点赞", prop: "likes", width: 80, slot: "likes" },
+  { label: "发布时间", prop: "published_at", minWidth: 160, slot: "time" },
+  { label: "操作", width: 150, slot: "operation" }
 ];
 
 const hasSelection = computed(() => selectedRows.value.length > 0);
+
+const statCards = computed(() => [
+  {
+    key: "",
+    label: "全部文章",
+    value: stats.total,
+    icon: ArticleLine,
+    gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    shadow: "0 4px 14px rgb(102 126 234 / 35%)"
+  },
+  {
+    key: "published",
+    label: "已发布",
+    value: stats.published,
+    icon: CheckboxCircleLine,
+    gradient: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+    shadow: "0 4px 14px rgb(67 233 123 / 35%)"
+  },
+  {
+    key: "draft",
+    label: "草稿箱",
+    value: stats.draft,
+    icon: DraftLine,
+    gradient: "linear-gradient(135deg, #a8b8d8 0%, #8e9eab 100%)",
+    shadow: "0 4px 14px rgb(142 158 171 / 35%)"
+  },
+  {
+    key: "archived",
+    label: "已归档",
+    value: stats.archived,
+    icon: ArchiveLine,
+    gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+    shadow: "0 4px 14px rgb(245 87 108 / 35%)"
+  }
+]);
 
 async function loadFilters() {
   const [cats, tags] = await Promise.all([
@@ -166,36 +208,19 @@ onMounted(() => {
   <div class="post-page">
     <div class="post-stats">
       <div
+        v-for="card in statCards"
+        :key="card.key"
         class="stat-card"
-        :class="{ active: statusFilter === '' }"
-        @click="statusFilter = ''; handleSearch()"
+        :class="{ active: statusFilter === card.key }"
+        @click="statusFilter = card.key; handleSearch()"
       >
-        <div class="stat-num">{{ stats.total }}</div>
-        <div class="stat-label">全部文章</div>
-      </div>
-      <div
-        class="stat-card stat-published"
-        :class="{ active: statusFilter === 'published' }"
-        @click="statusFilter = 'published'; handleSearch()"
-      >
-        <div class="stat-num">{{ stats.published }}</div>
-        <div class="stat-label">已发布</div>
-      </div>
-      <div
-        class="stat-card stat-draft"
-        :class="{ active: statusFilter === 'draft' }"
-        @click="statusFilter = 'draft'; handleSearch()"
-      >
-        <div class="stat-num">{{ stats.draft }}</div>
-        <div class="stat-label">草稿</div>
-      </div>
-      <div
-        class="stat-card stat-archived"
-        :class="{ active: statusFilter === 'archived' }"
-        @click="statusFilter = 'archived'; handleSearch()"
-      >
-        <div class="stat-num">{{ stats.archived }}</div>
-        <div class="stat-label">已归档</div>
+        <div class="stat-icon-wrap" :style="{ background: card.gradient, boxShadow: card.shadow }">
+          <IconifyIconOffline :icon="card.icon" />
+        </div>
+        <div class="stat-body">
+          <div class="stat-num">{{ card.value }}</div>
+          <div class="stat-label">{{ card.label }}</div>
+        </div>
       </div>
     </div>
 
@@ -204,7 +229,7 @@ onMounted(() => {
         <div class="toolbar-left">
           <el-input
             v-model="keyword"
-            placeholder="搜索文章..."
+            placeholder="搜索文章标题或内容..."
             clearable
             class="search-input"
             :prefix-icon="useRenderIcon('ri:search-line')"
@@ -213,7 +238,7 @@ onMounted(() => {
           />
           <el-select
             v-model="categoryFilter"
-            placeholder="分类"
+            placeholder="选择分类"
             clearable
             class="filter-select"
             @change="handleSearch"
@@ -227,7 +252,7 @@ onMounted(() => {
           </el-select>
           <el-select
             v-model="tagFilter"
-            placeholder="标签"
+            placeholder="选择标签"
             clearable
             class="filter-select"
             @change="handleSearch"
@@ -251,7 +276,7 @@ onMounted(() => {
             :icon="useRenderIcon('ri:delete-bin-line')"
             @click="handleBatchDelete"
           >
-            删除({{ selectedRows.length }})
+            批量删除 ({{ selectedRows.length }})
           </el-button>
           <el-button
             type="primary"
@@ -278,11 +303,24 @@ onMounted(() => {
         <template #article="{ row }">
           <div class="article-cell">
             <div class="article-title" @click="handleEdit(row)">
+              <IconifyIconOffline
+                v-if="row.is_pinned"
+                :icon="PushpinFill"
+                class="pin-icon"
+              />
               {{ row.title }}
             </div>
             <div v-if="row.description" class="article-desc">{{ row.description }}</div>
             <div class="article-meta">
-              <el-tag v-if="row.is_pinned" size="small" type="warning" effect="plain" round>置顶</el-tag>
+              <span class="meta-item">
+                <IconifyIconOffline :icon="EyeLine" class="meta-icon" />
+                {{ row.views ?? 0 }}
+              </span>
+              <span class="meta-item">
+                <IconifyIconOffline :icon="HeartLine" class="meta-icon" />
+                {{ row.likes ?? 0 }}
+              </span>
+              <span class="meta-divider">|</span>
               <span>{{ row.word_count ?? 0 }} 字</span>
               <span>约 {{ row.reading_time ?? 0 }} 分钟</span>
             </div>
@@ -290,7 +328,14 @@ onMounted(() => {
         </template>
 
         <template #category="{ row }">
-          <span v-if="row.category">{{ row.category }}</span>
+          <el-tag
+            v-if="row.category"
+            effect="plain"
+            round
+            class="category-tag"
+          >
+            {{ row.category }}
+          </el-tag>
           <span v-else class="text-placeholder">-</span>
         </template>
 
@@ -302,6 +347,7 @@ onMounted(() => {
               size="small"
               effect="plain"
               round
+              class="post-tag"
             >
               {{ tag }}
             </el-tag>
@@ -318,33 +364,57 @@ onMounted(() => {
         </template>
 
         <template #status="{ row }">
-          <el-tag
-            :type="row.status === 'published' ? 'success' : row.status === 'draft' ? 'info' : 'warning'"
-            size="small"
-            effect="dark"
-            round
+          <div
+            class="status-badge"
+            :class="row.status"
           >
+            <span class="status-dot" />
             {{ row.status === "published" ? "已发布" : row.status === "draft" ? "草稿" : "已归档" }}
-          </el-tag>
+          </div>
+        </template>
+
+        <template #views="{ row }">
+          <div class="count-cell">
+            <IconifyIconOffline :icon="EyeLine" class="count-icon" />
+            {{ row.views ?? 0 }}
+          </div>
+        </template>
+
+        <template #likes="{ row }">
+          <div class="count-cell likes">
+            <IconifyIconOffline :icon="HeartLine" class="count-icon" />
+            {{ row.likes ?? 0 }}
+          </div>
         </template>
 
         <template #time="{ row }">
           <div class="time-cell">
-            <div v-if="row.published_at">{{ formatTime(row.published_at) }}</div>
+            <div v-if="row.published_at" class="time-main">{{ formatTime(row.published_at) }}</div>
             <div v-else class="text-placeholder">未发布</div>
-            <div v-if="row.updated_at" class="time-sub">更新 {{ formatTime(row.updated_at) }}</div>
+            <div v-if="row.updated_at" class="time-sub">更新于 {{ formatTime(row.updated_at) }}</div>
           </div>
         </template>
 
         <template #operation="{ row }">
-          <el-button link type="primary" :icon="useRenderIcon('ri:edit-line')" @click="handleEdit(row)">
-            编辑
-          </el-button>
-          <el-popconfirm :title="`确认删除「${row.title}」？`" @confirm="handleDelete(row)">
-            <template #reference>
-              <el-button link type="danger" :icon="useRenderIcon('ri:delete-bin-line')">删除</el-button>
-            </template>
-          </el-popconfirm>
+          <div class="operation-cell">
+            <el-tooltip content="编辑文章" placement="top">
+              <el-button
+                link
+                type="primary"
+                :icon="useRenderIcon('ri:edit-line')"
+                @click="handleEdit(row)"
+              >
+                编辑
+              </el-button>
+            </el-tooltip>
+            <el-popconfirm :title="`确认删除「${row.title}」？`" @confirm="handleDelete(row)">
+              <template #reference>
+                <el-button link type="danger" :icon="useRenderIcon('ri:delete-bin-line')">
+                  删除
+                </el-button>
+              </template>
+            </el-popconfirm>
+          </div>
         </template>
       </pure-table>
     </el-card>
@@ -359,58 +429,99 @@ onMounted(() => {
 .post-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
 .stat-card {
-  padding: 16px;
-  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 12px;
   background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    opacity: 0.04;
+    transform: translate(20px, -20px);
+    transition: all 0.3s ease;
+  }
 
   &:hover {
-    border-color: var(--el-color-primary-light-5);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 8%);
   }
 
   &.active {
-    border-color: var(--el-color-primary);
-    background: var(--el-color-primary-light-9);
+    border-color: transparent;
+    transform: translateY(-2px);
   }
+}
 
+.stat-card:nth-child(1) {
+  &::after { background: #667eea; }
+  &.active { box-shadow: 0 8px 24px rgb(102 126 234 / 25%); }
+}
+
+.stat-card:nth-child(2) {
+  &::after { background: #43e97b; }
+  &.active { box-shadow: 0 8px 24px rgb(67 233 123 / 25%); }
+}
+
+.stat-card:nth-child(3) {
+  &::after { background: #8e9eab; }
+  &.active { box-shadow: 0 8px 24px rgb(142 158 171 / 25%); }
+}
+
+.stat-card:nth-child(4) {
+  &::after { background: #f5576c; }
+  &.active { box-shadow: 0 8px 24px rgb(245 87 108 / 25%); }
+}
+
+.stat-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  font-size: 22px;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.stat-body {
   .stat-num {
-    font-size: 28px;
-    font-weight: 700;
+    font-size: 26px;
+    font-weight: 800;
     color: var(--el-text-color-primary);
     line-height: 1.2;
+    letter-spacing: -0.5px;
   }
 
   .stat-label {
     font-size: 13px;
     color: var(--el-text-color-secondary);
-    margin-top: 4px;
+    margin-top: 2px;
+    font-weight: 500;
   }
 }
 
-.stat-published.active {
-  border-color: var(--el-color-success);
-  background: var(--el-color-success-light-9);
-}
-
-.stat-draft.active {
-  border-color: var(--el-color-info);
-  background: var(--el-color-info-light-9);
-}
-
-.stat-archived.active {
-  border-color: var(--el-color-warning);
-  background: var(--el-color-warning-light-9);
-}
-
 .post-table-card {
+  border-radius: 12px;
+
   :deep(.el-card__body) {
     padding: 0;
   }
@@ -422,8 +533,9 @@ onMounted(() => {
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
-  padding: 14px 16px;
+  padding: 16px 20px;
   border-bottom: 1px solid var(--el-border-color-lighter);
+  background: var(--el-bg-color);
 }
 
 .toolbar-left {
@@ -440,11 +552,11 @@ onMounted(() => {
 }
 
 .search-input {
-  width: 200px;
+  width: 220px;
 }
 
 .filter-select {
-  width: 110px;
+  width: 120px;
 }
 
 .article-cell {
@@ -455,18 +567,29 @@ onMounted(() => {
     font-size: 14px;
     color: var(--el-text-color-primary);
     cursor: pointer;
-    line-height: 1.4;
+    line-height: 1.5;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s;
 
     &:hover {
       color: var(--el-color-primary);
+    }
+
+    .pin-icon {
+      color: #f5576c;
+      font-size: 14px;
+      flex-shrink: 0;
+      animation: pin-bounce 2s ease-in-out infinite;
     }
   }
 
   .article-desc {
     font-size: 12px;
     color: var(--el-text-color-secondary);
-    margin-top: 3px;
-    line-height: 1.4;
+    margin-top: 4px;
+    line-height: 1.5;
     display: -webkit-box;
     -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
@@ -477,9 +600,35 @@ onMounted(() => {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 4px;
+    margin-top: 6px;
     font-size: 12px;
     color: var(--el-text-color-placeholder);
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .meta-icon {
+      font-size: 13px;
+    }
+
+    .meta-divider {
+      color: var(--el-border-color);
+    }
+  }
+}
+
+.category-tag {
+  font-weight: 500;
+}
+
+.post-tag {
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: scale(1.05);
   }
 }
 
@@ -487,6 +636,68 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  &.published {
+    background: rgb(67 233 123 / 10%);
+    color: #43e97b;
+
+    .status-dot {
+      background: #43e97b;
+      box-shadow: 0 0 6px #43e97b;
+    }
+  }
+
+  &.draft {
+    background: rgb(142 158 171 / 10%);
+    color: #8e9eab;
+
+    .status-dot {
+      background: #8e9eab;
+    }
+  }
+
+  &.archived {
+    background: rgb(245 87 108 / 10%);
+    color: #f5576c;
+
+    .status-dot {
+      background: #f5576c;
+    }
+  }
+}
+
+.count-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--el-text-color-regular);
+
+  .count-icon {
+    font-size: 14px;
+    color: var(--el-text-color-placeholder);
+  }
+
+  &.likes .count-icon {
+    color: #f5576c;
+  }
 }
 
 .text-placeholder {
@@ -497,35 +708,82 @@ onMounted(() => {
   text-align: left;
   font-size: 13px;
   line-height: 1.5;
-  color: var(--el-text-color-regular);
+
+  .time-main {
+    color: var(--el-text-color-regular);
+    font-weight: 500;
+  }
 
   .time-sub {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--el-text-color-placeholder);
+    margin-top: 2px;
+  }
+}
+
+.operation-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@keyframes pin-bounce {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-8deg); }
+  75% { transform: rotate(8deg); }
+}
+
+html.dark .stat-card {
+  border-color: rgb(255 255 255 / 8%);
+
+  &:hover {
+    box-shadow: 0 8px 24px rgb(0 0 0 / 30%);
+  }
+}
+
+html.dark .status-badge {
+  &.published {
+    background: rgb(67 233 123 / 15%);
+  }
+
+  &.draft {
+    background: rgb(142 158 171 / 15%);
+  }
+
+  &.archived {
+    background: rgb(245 87 108 / 15%);
   }
 }
 
 @media screen and (width <= 768px) {
   .post-page {
-    padding: 8px;
+    padding: 10px;
   }
 
   .post-stats {
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    margin-bottom: 12px;
+    gap: 10px;
+    margin-bottom: 14px;
   }
 
   .stat-card {
-    padding: 12px;
+    padding: 14px;
+    gap: 12px;
+  }
 
-    .stat-num {
-      font-size: 22px;
-    }
+  .stat-icon-wrap {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    border-radius: 10px;
+  }
+
+  .stat-body .stat-num {
+    font-size: 22px;
   }
 
   .post-toolbar {
-    padding: 10px 12px;
+    padding: 12px 14px;
     flex-direction: column;
     align-items: stretch;
   }
@@ -551,13 +809,22 @@ onMounted(() => {
 
 @media screen and (width <= 480px) {
   .post-stats {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
+    gap: 8px;
   }
 
   .stat-card {
-    padding: 10px;
+    padding: 12px;
+    gap: 10px;
+  }
 
+  .stat-icon-wrap {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+    border-radius: 8px;
+  }
+
+  .stat-body {
     .stat-num {
       font-size: 20px;
     }
