@@ -2,13 +2,13 @@
 @mixin merge-style($sideBarWidth) {
   @media screen and (width >= 150px) and (width <= 420px) {
     .app-main-nofixed-header {
-      overflow-y: hidden;
+      overflow-y: visible;
     }
   }
 
   @media screen and (width >= 420px) {
     .app-main-nofixed-header {
-      overflow: hidden;
+      overflow: visible;
     }
   }
 
