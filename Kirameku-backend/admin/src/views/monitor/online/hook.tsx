@@ -56,7 +56,6 @@ export function useRole() {
     },
     {
       label: "操作",
-      fixed: "right",
       slot: "operation"
     }
   ];

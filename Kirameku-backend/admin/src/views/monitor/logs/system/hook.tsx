@@ -131,7 +131,6 @@ export function useRole(tableRef: Ref) {
     },
     {
       label: "操作",
-      fixed: "right",
       slot: "operation"
     }
   ];

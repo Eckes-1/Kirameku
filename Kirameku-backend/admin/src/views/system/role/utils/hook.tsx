@@ -87,7 +87,6 @@ export function useRole(treeRef: Ref) {
     },
     {
       label: "操作",
-      fixed: "right",
       width: 210,
       slot: "operation"
     }

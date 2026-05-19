@@ -61,7 +61,7 @@ const columns: TableColumnList = [
     formatter: ({ updated_at }) =>
       updated_at?.replace("T", " ").slice(0, 19) ?? ""
   },
-  { label: "操作", fixed: "right", width: 200, slot: "operation" }
+  { label: "操作", width: 200, slot: "operation" }
 ];
 
 async function onSearch() {

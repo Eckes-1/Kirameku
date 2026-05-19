@@ -76,7 +76,7 @@ const columns: TableColumnList = [
     formatter: ({ updated_at }) =>
       updated_at?.replace("T", " ").slice(0, 19) ?? ""
   },
-  { label: "操作", fixed: "right", width: 200, slot: "operation" }
+  { label: "操作", width: 200, slot: "operation" }
 ];
 
 async function onSearch() {
@@ -258,7 +258,7 @@ const commentColumns: TableColumnList = [
     formatter: ({ created_at }) =>
       created_at ? created_at.replace("T", " ").slice(0, 19) : ""
   },
-  { label: "操作", fixed: "right", width: 200, slot: "operation" }
+  { label: "操作", width: 200, slot: "operation" }
 ];
 
 function flattenReplies(replies: ChatterCommentItem[], depth = 0): (ChatterCommentItem & { _depth: number })[] {

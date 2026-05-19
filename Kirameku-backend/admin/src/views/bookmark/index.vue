@@ -63,7 +63,7 @@ const columns: TableColumnList = [
     formatter: ({ updated_at }) =>
       updated_at?.replace("T", " ").slice(0, 19) ?? ""
   },
-  { label: "操作", fixed: "right", width: 250, slot: "operation" }
+  { label: "操作", width: 250, slot: "operation" }
 ];
 
 async function onSearch() {
@@ -285,7 +285,7 @@ const siteColumns: TableColumnList = [
     formatter: ({ updated_at }) =>
       updated_at?.replace("T", " ").slice(0, 19) ?? ""
   },
-  { label: "操作", fixed: "right", width: 160, slot: "siteOperation" }
+  { label: "操作", width: 160, slot: "siteOperation" }
 ];
 
 async function openSites(row: BookmarkCategoryItem) {

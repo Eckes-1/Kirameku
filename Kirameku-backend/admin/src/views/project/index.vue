@@ -56,7 +56,7 @@ const columns: TableColumnList = [
     formatter: ({ created_at }: ProjectItem) =>
       created_at?.replace("T", " ").slice(0, 19) ?? ""
   },
-  { label: "操作", fixed: "right", width: 200, slot: "operation" }
+  { label: "操作", width: 200, slot: "operation" }
 ];
 
 const statusOptions = [

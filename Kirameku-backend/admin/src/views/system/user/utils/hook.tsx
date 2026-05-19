@@ -156,7 +156,6 @@ export function useUser(tableRef: Ref, treeRef: Ref) {
     },
     {
       label: "操作",
-      fixed: "right",
       width: 180,
       slot: "operation"
     }

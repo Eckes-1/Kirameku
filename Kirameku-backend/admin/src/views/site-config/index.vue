@@ -49,7 +49,6 @@ const columns: TableColumnList = [
   },
   {
     label: "操作",
-    fixed: "right",
     width: 150,
     slot: "operation"
   }
