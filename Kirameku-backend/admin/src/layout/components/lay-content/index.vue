@@ -43,11 +43,7 @@ const layout = computed(() => {
 });
 
 const getMainWidth = computed(() => {
-  return isNumber(stretch.value)
-    ? stretch.value + "px"
-    : stretch.value
-      ? "1440px"
-      : "100%";
+  return "100%";
 });
 
 const getSectionStyle = computed(() => {
