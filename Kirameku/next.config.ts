@@ -3,15 +3,19 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   compress: true,
 
+  allowedDevOrigins: [
+    "127.0.0.1",
+  ],
+
   async rewrites() {
     return [
       {
         source: "/api/:path*",
-        destination: "http://127.0.0.1:8000/api/:path*",
+        destination: "http://localhost:8000/api/:path*",
       },
       {
         source: "/uploads/:path*",
-        destination: "http://127.0.0.1:8000/uploads/:path*",
+        destination: "http://localhost:8000/uploads/:path*",
       },
       {
         source: "/reader3/:path*",
