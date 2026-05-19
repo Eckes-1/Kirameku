@@ -161,36 +161,50 @@
   }
 }
 
-/* 修复分页器排列混乱：确保所有子元素垂直居中对齐，防止换行 */
+/* 修复分页器排列混乱 */
 .el-pagination {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
+  justify-content: center;
+  row-gap: 8px;
+  column-gap: 4px;
+
+  > * {
+    margin: 0 !important;
+  }
 
   .el-pagination__total {
     flex-shrink: 0;
+    margin-right: 4px !important;
   }
 
   .el-pagination__sizes {
     flex-shrink: 0;
+    margin-right: 4px !important;
 
     .el-select {
       margin: 0;
     }
   }
 
+  .btn-prev,
+  .btn-next {
+    flex-shrink: 0;
+    margin: 0 2px !important;
+  }
+
   .el-pager {
     flex-shrink: 0;
+    margin: 0 2px !important;
   }
 
   .el-pagination__jump {
     flex-shrink: 0;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 4px;
-    margin-left: 0;
+    margin-left: 4px !important;
 
     .el-input {
       margin: 0;
