@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
 
   allowedDevOrigins: [
     "127.0.0.1",
+    "run-agent-6a0be357b96c4d5d18e15a03-mpc4axue-preview.agent-sandbox-bj-c1-gw.trae.cn",
   ],
 
   async rewrites() {
@@ -16,6 +17,10 @@ const nextConfig: NextConfig = {
       {
         source: "/uploads/:path*",
         destination: "http://localhost:8000/uploads/:path*",
+      },
+      {
+        source: "/admin/:path*",
+        destination: "http://localhost:8000/admin/:path*",
       },
       {
         source: "/reader3/:path*",
