@@ -153,7 +153,7 @@ const {
             ref="tableRef"
             row-key="id"
             adaptive
-            :adaptiveConfig="{ offsetBottom: 108 }"
+            :adaptiveConfig="{ offsetBottom: 108, fixHeader: false }"
             align-whole="center"
             table-layout="auto"
             :loading="loading"

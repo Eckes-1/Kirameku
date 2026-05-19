@@ -71,7 +71,7 @@ const {
           :loading="loading"
           :size="size"
           adaptive
-          :adaptiveConfig="{ offsetBottom: 108 }"
+          :adaptiveConfig="{ offsetBottom: 108, fixHeader: false }"
           :data="dataList"
           :columns="dynamicColumns"
           :pagination="{ ...pagination, size }"

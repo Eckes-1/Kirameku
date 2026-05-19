@@ -167,7 +167,7 @@ onMounted(() => {
             :size="size"
             adaptive
             :row-style="rowStyle"
-            :adaptiveConfig="{ offsetBottom: 108 }"
+            :adaptiveConfig="{ offsetBottom: 108, fixHeader: false }"
             :data="dataList"
             :columns="dynamicColumns"
             :pagination="{ ...pagination, size }"
