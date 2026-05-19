@@ -17,6 +17,7 @@ import ArchiveLine from "~icons/ri/archive-line";
 import EyeLine from "~icons/ri/eye-line";
 import HeartLine from "~icons/ri/heart-line";
 import PushpinFill from "~icons/ri/pushpin-fill";
+import CalendarLine from "~icons/ri/calendar-line";
 
 defineOptions({ name: "PostIndex" });
 
@@ -42,51 +43,22 @@ const pagination = reactive<PaginationProps>({
 
 const columns: TableColumnList = [
   { type: "selection", width: 40, reserveSelection: true },
-  { label: "文章", prop: "title", minWidth: 280, slot: "article" },
+  { label: "文章", prop: "title", minWidth: 300, slot: "article" },
   { label: "分类", prop: "category", width: 110, slot: "category" },
   { label: "标签", prop: "tags", minWidth: 150, slot: "tags" },
-  { label: "状态", prop: "status", width: 90, slot: "status" },
-  { label: "浏览", prop: "views", width: 80, slot: "views" },
-  { label: "点赞", prop: "likes", width: 80, slot: "likes" },
-  { label: "发布时间", prop: "published_at", minWidth: 160, slot: "time" },
+  { label: "状态", prop: "status", width: 100, slot: "status" },
+  { label: "数据", prop: "views", width: 120, slot: "data" },
+  { label: "发布时间", prop: "published_at", minWidth: 170, slot: "time" },
   { label: "操作", width: 150, slot: "operation" }
 ];
 
 const hasSelection = computed(() => selectedRows.value.length > 0);
 
 const statCards = computed(() => [
-  {
-    key: "",
-    label: "全部文章",
-    value: stats.total,
-    icon: ArticleLine,
-    gradient: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    shadow: "0 4px 14px rgb(102 126 234 / 35%)"
-  },
-  {
-    key: "published",
-    label: "已发布",
-    value: stats.published,
-    icon: CheckboxCircleLine,
-    gradient: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-    shadow: "0 4px 14px rgb(67 233 123 / 35%)"
-  },
-  {
-    key: "draft",
-    label: "草稿箱",
-    value: stats.draft,
-    icon: DraftLine,
-    gradient: "linear-gradient(135deg, #a8b8d8 0%, #8e9eab 100%)",
-    shadow: "0 4px 14px rgb(142 158 171 / 35%)"
-  },
-  {
-    key: "archived",
-    label: "已归档",
-    value: stats.archived,
-    icon: ArchiveLine,
-    gradient: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-    shadow: "0 4px 14px rgb(245 87 108 / 35%)"
-  }
+  { key: "", label: "全部文章", value: stats.total, icon: ArticleLine, color: "#409eff", bg: "#ecf5ff" },
+  { key: "published", label: "已发布", value: stats.published, icon: CheckboxCircleLine, color: "#67c23a", bg: "#f0f9eb" },
+  { key: "draft", label: "草稿箱", value: stats.draft, icon: DraftLine, color: "#909399", bg: "#f4f4f5" },
+  { key: "archived", label: "已归档", value: stats.archived, icon: ArchiveLine, color: "#e6a23c", bg: "#fdf6ec" }
 ]);
 
 async function loadFilters() {
@@ -206,6 +178,22 @@ onMounted(() => {
 
 <template>
   <div class="post-page">
+    <div class="post-header">
+      <div class="header-info">
+        <h2 class="page-title">文章管理</h2>
+        <p class="page-desc">管理和发布你的博客文章</p>
+      </div>
+      <el-button
+        type="primary"
+        :icon="useRenderIcon('ri:add-circle-line')"
+        size="large"
+        round
+        @click="handleCreate"
+      >
+        写文章
+      </el-button>
+    </div>
+
     <div class="post-stats">
       <div
         v-for="card in statCards"
@@ -214,12 +202,14 @@ onMounted(() => {
         :class="{ active: statusFilter === card.key }"
         @click="statusFilter = card.key; handleSearch()"
       >
-        <div class="stat-icon-wrap" :style="{ background: card.gradient, boxShadow: card.shadow }">
-          <IconifyIconOffline :icon="card.icon" />
-        </div>
-        <div class="stat-body">
-          <div class="stat-num">{{ card.value }}</div>
-          <div class="stat-label">{{ card.label }}</div>
+        <div class="stat-left" :style="{ borderLeftColor: card.color }">
+          <div class="stat-icon" :style="{ color: card.color, background: card.bg }">
+            <IconifyIconOffline :icon="card.icon" />
+          </div>
+          <div class="stat-body">
+            <div class="stat-num" :style="{ color: card.color }">{{ card.value }}</div>
+            <div class="stat-label">{{ card.label }}</div>
+          </div>
         </div>
       </div>
     </div>
@@ -229,7 +219,7 @@ onMounted(() => {
         <div class="toolbar-left">
           <el-input
             v-model="keyword"
-            placeholder="搜索文章标题或内容..."
+            placeholder="搜索文章标题..."
             clearable
             class="search-input"
             :prefix-icon="useRenderIcon('ri:search-line')"
@@ -273,17 +263,11 @@ onMounted(() => {
             v-if="hasSelection"
             type="danger"
             plain
+            round
             :icon="useRenderIcon('ri:delete-bin-line')"
             @click="handleBatchDelete"
           >
             批量删除 ({{ selectedRows.length }})
-          </el-button>
-          <el-button
-            type="primary"
-            :icon="useRenderIcon('ri:add-circle-line')"
-            @click="handleCreate"
-          >
-            写文章
           </el-button>
         </div>
       </div>
@@ -312,17 +296,10 @@ onMounted(() => {
             </div>
             <div v-if="row.description" class="article-desc">{{ row.description }}</div>
             <div class="article-meta">
-              <span class="meta-item">
-                <IconifyIconOffline :icon="EyeLine" class="meta-icon" />
-                {{ row.views ?? 0 }}
-              </span>
-              <span class="meta-item">
-                <IconifyIconOffline :icon="HeartLine" class="meta-icon" />
-                {{ row.likes ?? 0 }}
-              </span>
-              <span class="meta-divider">|</span>
+              <span v-if="row.is_pinned" class="meta-pin">置顶</span>
               <span>{{ row.word_count ?? 0 }} 字</span>
-              <span>约 {{ row.reading_time ?? 0 }} 分钟</span>
+              <span class="meta-dot">·</span>
+              <span>约 {{ row.reading_time ?? 0 }} 分钟阅读</span>
             </div>
           </div>
         </template>
@@ -332,7 +309,7 @@ onMounted(() => {
             v-if="row.category"
             effect="plain"
             round
-            class="category-tag"
+            size="small"
           >
             {{ row.category }}
           </el-tag>
@@ -347,7 +324,7 @@ onMounted(() => {
               size="small"
               effect="plain"
               round
-              class="post-tag"
+              type="info"
             >
               {{ tag }}
             </el-tag>
@@ -355,8 +332,8 @@ onMounted(() => {
               v-if="(row.tags || []).length > 3"
               size="small"
               effect="plain"
-              type="info"
               round
+              type="info"
             >
               +{{ row.tags.length - 3 }}
             </el-tag>
@@ -364,49 +341,51 @@ onMounted(() => {
         </template>
 
         <template #status="{ row }">
-          <div
-            class="status-badge"
+          <span
+            class="status-dot-wrap"
             :class="row.status"
           >
-            <span class="status-dot" />
+            <span class="dot" />
             {{ row.status === "published" ? "已发布" : row.status === "draft" ? "草稿" : "已归档" }}
-          </div>
+          </span>
         </template>
 
-        <template #views="{ row }">
-          <div class="count-cell">
-            <IconifyIconOffline :icon="EyeLine" class="count-icon" />
-            {{ row.views ?? 0 }}
-          </div>
-        </template>
-
-        <template #likes="{ row }">
-          <div class="count-cell likes">
-            <IconifyIconOffline :icon="HeartLine" class="count-icon" />
-            {{ row.likes ?? 0 }}
+        <template #data="{ row }">
+          <div class="data-cell">
+            <span class="data-item">
+              <IconifyIconOffline :icon="EyeLine" class="data-icon" />
+              {{ row.views ?? 0 }}
+            </span>
+            <span class="data-item data-likes">
+              <IconifyIconOffline :icon="HeartLine" class="data-icon" />
+              {{ row.likes ?? 0 }}
+            </span>
           </div>
         </template>
 
         <template #time="{ row }">
           <div class="time-cell">
-            <div v-if="row.published_at" class="time-main">{{ formatTime(row.published_at) }}</div>
+            <div v-if="row.published_at" class="time-row">
+              <IconifyIconOffline :icon="CalendarLine" class="time-icon" />
+              {{ formatTime(row.published_at) }}
+            </div>
             <div v-else class="text-placeholder">未发布</div>
-            <div v-if="row.updated_at" class="time-sub">更新于 {{ formatTime(row.updated_at) }}</div>
+            <div v-if="row.updated_at" class="time-sub">
+              更新于 {{ formatTime(row.updated_at) }}
+            </div>
           </div>
         </template>
 
         <template #operation="{ row }">
-          <div class="operation-cell">
-            <el-tooltip content="编辑文章" placement="top">
-              <el-button
-                link
-                type="primary"
-                :icon="useRenderIcon('ri:edit-line')"
-                @click="handleEdit(row)"
-              >
-                编辑
-              </el-button>
-            </el-tooltip>
+          <div class="op-cell">
+            <el-button
+              link
+              type="primary"
+              :icon="useRenderIcon('ri:edit-line')"
+              @click="handleEdit(row)"
+            >
+              编辑
+            </el-button>
             <el-popconfirm :title="`确认删除「${row.title}」？`" @confirm="handleDelete(row)">
               <template #reference>
                 <el-button link type="danger" :icon="useRenderIcon('ri:delete-bin-line')">
@@ -423,7 +402,28 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .post-page {
-  padding: 16px;
+  padding: 20px;
+}
+
+.post-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--el-text-color-primary);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.page-desc {
+  font-size: 14px;
+  color: var(--el-text-color-secondary);
+  margin: 4px 0 0;
 }
 
 .post-stats {
@@ -434,79 +434,56 @@ onMounted(() => {
 }
 
 .stat-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 20px;
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--el-bg-color);
   border: 1px solid var(--el-border-color-lighter);
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
+  transition: all 0.25s ease;
   overflow: hidden;
 
-  &::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    opacity: 0.04;
-    transform: translate(20px, -20px);
-    transition: all 0.3s ease;
-  }
-
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgb(0 0 0 / 8%);
+    box-shadow: 0 4px 16px rgb(0 0 0 / 6%);
+    transform: translateY(-1px);
   }
 
   &.active {
-    border-color: transparent;
-    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgb(0 0 0 / 8%);
   }
 }
 
-.stat-card:nth-child(1) {
-  &::after { background: #667eea; }
-  &.active { box-shadow: 0 8px 24px rgb(102 126 234 / 25%); }
+.stat-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border-left: 3px solid transparent;
+  transition: border-color 0.25s;
 }
 
-.stat-card:nth-child(2) {
-  &::after { background: #43e97b; }
-  &.active { box-shadow: 0 8px 24px rgb(67 233 123 / 25%); }
+.stat-card.active .stat-left {
+  border-left-width: 3px;
 }
 
-.stat-card:nth-child(3) {
-  &::after { background: #8e9eab; }
-  &.active { box-shadow: 0 8px 24px rgb(142 158 171 / 25%); }
-}
-
-.stat-card:nth-child(4) {
-  &::after { background: #f5576c; }
-  &.active { box-shadow: 0 8px 24px rgb(245 87 108 / 25%); }
-}
-
-.stat-icon-wrap {
+.stat-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  font-size: 22px;
-  color: #fff;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  font-size: 20px;
   flex-shrink: 0;
+  transition: transform 0.25s;
+}
+
+.stat-card:hover .stat-icon {
+  transform: scale(1.08);
 }
 
 .stat-body {
   .stat-num {
-    font-size: 26px;
+    font-size: 24px;
     font-weight: 800;
-    color: var(--el-text-color-primary);
     line-height: 1.2;
     letter-spacing: -0.5px;
   }
@@ -515,12 +492,11 @@ onMounted(() => {
     font-size: 13px;
     color: var(--el-text-color-secondary);
     margin-top: 2px;
-    font-weight: 500;
   }
 }
 
 .post-table-card {
-  border-radius: 12px;
+  border-radius: 10px;
 
   :deep(.el-card__body) {
     padding: 0;
@@ -535,7 +511,6 @@ onMounted(() => {
   gap: 10px;
   padding: 16px 20px;
   border-bottom: 1px solid var(--el-border-color-lighter);
-  background: var(--el-bg-color);
 }
 
 .toolbar-left {
@@ -578,10 +553,9 @@ onMounted(() => {
     }
 
     .pin-icon {
-      color: #f5576c;
+      color: #e6a23c;
       font-size: 14px;
       flex-shrink: 0;
-      animation: pin-bounce 2s ease-in-out infinite;
     }
   }
 
@@ -599,36 +573,19 @@ onMounted(() => {
   .article-meta {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     margin-top: 6px;
     font-size: 12px;
     color: var(--el-text-color-placeholder);
 
-    .meta-item {
-      display: flex;
-      align-items: center;
-      gap: 3px;
+    .meta-pin {
+      color: #e6a23c;
+      font-weight: 600;
     }
 
-    .meta-icon {
-      font-size: 13px;
-    }
-
-    .meta-divider {
+    .meta-dot {
       color: var(--el-border-color);
     }
-  }
-}
-
-.category-tag {
-  font-weight: 500;
-}
-
-.post-tag {
-  transition: transform 0.2s;
-
-  &:hover {
-    transform: scale(1.05);
   }
 }
 
@@ -638,65 +595,57 @@ onMounted(() => {
   gap: 4px;
 }
 
-.status-badge {
+.status-dot-wrap {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
 
-  .status-dot {
-    width: 6px;
-    height: 6px;
+  .dot {
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
+    flex-shrink: 0;
   }
 
   &.published {
-    background: rgb(67 233 123 / 10%);
-    color: #43e97b;
-
-    .status-dot {
-      background: #43e97b;
-      box-shadow: 0 0 6px #43e97b;
-    }
+    color: #67c23a;
+    .dot { background: #67c23a; }
   }
 
   &.draft {
-    background: rgb(142 158 171 / 10%);
-    color: #8e9eab;
-
-    .status-dot {
-      background: #8e9eab;
-    }
+    color: #909399;
+    .dot { background: #909399; }
   }
 
   &.archived {
-    background: rgb(245 87 108 / 10%);
-    color: #f5576c;
-
-    .status-dot {
-      background: #f5576c;
-    }
+    color: #e6a23c;
+    .dot { background: #e6a23c; }
   }
 }
 
-.count-cell {
+.data-cell {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  font-size: 13px;
-  color: var(--el-text-color-regular);
+  gap: 12px;
 
-  .count-icon {
+  .data-item {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 13px;
+    color: var(--el-text-color-regular);
+  }
+
+  .data-icon {
     font-size: 14px;
     color: var(--el-text-color-placeholder);
   }
 
-  &.likes .count-icon {
-    color: #f5576c;
+  .data-likes .data-icon {
+    color: #f56c6c;
   }
 }
 
@@ -706,58 +655,63 @@ onMounted(() => {
 
 .time-cell {
   text-align: left;
-  font-size: 13px;
-  line-height: 1.5;
 
-  .time-main {
+  .time-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
     color: var(--el-text-color-regular);
     font-weight: 500;
+  }
+
+  .time-icon {
+    font-size: 14px;
+    color: var(--el-text-color-placeholder);
+    flex-shrink: 0;
   }
 
   .time-sub {
     font-size: 11px;
     color: var(--el-text-color-placeholder);
-    margin-top: 2px;
+    margin-top: 3px;
+    padding-left: 19px;
   }
 }
 
-.operation-cell {
+.op-cell {
   display: flex;
   align-items: center;
   gap: 4px;
-}
-
-@keyframes pin-bounce {
-  0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(-8deg); }
-  75% { transform: rotate(8deg); }
 }
 
 html.dark .stat-card {
   border-color: rgb(255 255 255 / 8%);
 
   &:hover {
-    box-shadow: 0 8px 24px rgb(0 0 0 / 30%);
-  }
-}
-
-html.dark .status-badge {
-  &.published {
-    background: rgb(67 233 123 / 15%);
+    box-shadow: 0 4px 16px rgb(0 0 0 / 25%);
   }
 
-  &.draft {
-    background: rgb(142 158 171 / 15%);
-  }
-
-  &.archived {
-    background: rgb(245 87 108 / 15%);
+  &.active {
+    box-shadow: 0 4px 16px rgb(0 0 0 / 30%);
   }
 }
 
 @media screen and (width <= 768px) {
   .post-page {
-    padding: 10px;
+    padding: 12px;
+  }
+
+  .post-header {
+    margin-bottom: 16px;
+  }
+
+  .page-title {
+    font-size: 18px;
+  }
+
+  .page-desc {
+    font-size: 12px;
   }
 
   .post-stats {
@@ -766,20 +720,20 @@ html.dark .status-badge {
     margin-bottom: 14px;
   }
 
-  .stat-card {
-    padding: 14px;
-    gap: 12px;
+  .stat-left {
+    padding: 14px 16px;
+    gap: 10px;
   }
 
-  .stat-icon-wrap {
-    width: 40px;
-    height: 40px;
-    font-size: 18px;
-    border-radius: 10px;
+  .stat-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 17px;
+    border-radius: 8px;
   }
 
   .stat-body .stat-num {
-    font-size: 22px;
+    font-size: 20px;
   }
 
   .post-toolbar {
@@ -808,25 +762,34 @@ html.dark .status-badge {
 }
 
 @media screen and (width <= 480px) {
+  .post-page {
+    padding: 8px;
+  }
+
+  .post-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
   .post-stats {
     gap: 8px;
   }
 
-  .stat-card {
+  .stat-left {
     padding: 12px;
-    gap: 10px;
+    gap: 8px;
   }
 
-  .stat-icon-wrap {
-    width: 36px;
-    height: 36px;
-    font-size: 16px;
-    border-radius: 8px;
+  .stat-icon {
+    width: 34px;
+    height: 34px;
+    font-size: 15px;
   }
 
   .stat-body {
     .stat-num {
-      font-size: 20px;
+      font-size: 18px;
     }
 
     .stat-label {
