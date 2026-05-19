@@ -117,8 +117,7 @@ const transitionMain = defineComponent({
               :wrap-style="{
                 display: 'flex',
                 'flex-wrap': 'wrap',
-                'max-width': getMainWidth,
-                margin: '0 auto',
+                width: '100%',
                 transition: 'all 300ms cubic-bezier(0.4, 0, 0.2, 1)'
               }"
               :view-style="{
@@ -206,6 +205,7 @@ const transitionMain = defineComponent({
 }
 
 .main-content {
-  margin: 24px;
+  margin: 0;
+  padding: 16px;
 }
 </style>
